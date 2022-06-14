@@ -1,0 +1,7 @@
+/mysql/sql/matomo.sql
+/sql/matomo.sql
+/sql/pg_db_init.sql
+/sql/pg_demo.sql
+/sql/pg_demo.sql.save
+/monitoring-telegram-bot/settings/development.py
+/monitoring-telegram-bot/settings/production.py

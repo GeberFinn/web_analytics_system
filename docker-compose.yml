@@ -1,0 +1,182 @@
+version: '3.8'
+
+#container_name: db-comparison
+
+services:
+  mysql-db:
+    image: mysql:5.7.38
+    ports:
+      - 3307:3306
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=11235813NW
+    #  - MYSQL_PASSWORD=11235813F
+    #  - MYSQL_USER=geber-finn
+      - MYSQL_DATABASE=matomo
+    #networks:
+    #  - net
+    volumes:
+      - ./mysql/sql:/docker-entrypoint-initdb.d
+      - ./mysql/conf:/etc/mysql/mysql.conf.d/
+    #  - ./csv/:/etc/mysql/csv
+    #  - ./sql/:/etc/mysql/sql
+  clickhouse-db:
+    hostname: clickhouse-logging
+    image: clickhouse/clickhouse-server:22.3.2.2-alpine
+    container_name: clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - 8122:8123
+      - 9000:9000
+      - 9009:9009
+    #networks:
+    #  - net
+    volumes:
+      - ./csv/:/var/lib/clickhouse/csv 
+      - ./sql/:/var/lib/clickhouse/sql 
+      - ./clickhouse/:/etc/clickhouse-server/users.d/
+  postgres-db:
+    image: timescale/timescaledb:2.6.0-pg12
+    ports: 
+      - 5433:5432
+    command: ["postgres", "-c", "config_file=/etc/postgresql.conf"]
+    environment:
+      - PGDATA=/var/lib/postgresql/pgdata
+      - POSTGRES_PASSWORD=1201
+      - POSTGRES_USER=geber-finn
+      - POSTGRES_DB=test_db
+    volumes:
+      - ./postgresql.conf:/etc/postgresql.conf
+      #- ./sql/:/var/lib/postgresql/sql/ 
+      - ./csv/:/var/lib/postgresql/csv/ 
+      - ./sql/init_db/pg_schema.sql:/docker-entrypoint-initdb.d/db.sql
+    #command: ["psql", "-h", "localhost", "-d", "test_db", "-U", "geber-finn", "-f", "/var/lib/postgresql/sql/init_db/pg_schema.sql"]
+  grafana:
+    image: grafana/grafana:8.1.5-ubuntu
+    container_name: grafana
+    hostname: grafana
+    ports:
+      - "3000:3000"
+    restart: always
+    environment: 
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,grafana-clickhouse-datasource
+      - GF_RENDERING_SERVER_URL=http://renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      - GF_LOG_FILTERS=rendering:debug
+    #command: ["apt-get","install","libgtk2.0-0"]
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    ports:
+      - 8081:8081
+  python:
+    build: ./monitoring-telegram-bot
+    volumes:
+      - ./monitoring-telegram-bot/:/usr/src/monitoring-telegram-bot
+    command: python3 main.py 
+#networks:
+#  net:
+#    driver: bridge
+#    ipam:
+#      config:
+#        - subnet: 192.168.220.0/24
+
+    
+  #  quest-db:
+  #    image: questdb/questdb:6.2.1.1
+  #    ports:
+  #      - 8812:8812
+  #      - 9001:9000
+  #      - 9010:9009
+  #     - 9004:9003
+  #    volumes:
+  #      - ./csv/:/root/.questdb/db/csv
+  #     - ./questdb/:/root/.questdb/
+
+  #command: cqlsh 172.28.0.6 9042 -e create keyspace test_ks with replication={'class':simplestrategy,'replication_factor':1};
+  #influx-db:
+  #  image: influxdb:2.2.0-alpine
+  #  ports: 
+  #    - 8086:8086
+  #  environment:
+  #    - DOCKER_INFLUXDB_INIT_USERNAME=geber-finn
+  #    - DOCKER_INFLUXDB_INIT_PASSWORD=12010306
+  #    - DOCKER_INFLUXDB_INIT_ORG=my-org
+  #    - DOCKER_INFLUXDB_INIT_BUCKET=test_bucket
+  #    - DOCKER_INFLUXDB_INIT_MODE=setup  
+  #  volumes:
+  #    - ./csv/:/var/lib/influxdb2
+
+    #file:
+
+
+    #psql -c max_locks_per_transaction=1024
+    #psql -h localhost -p 5433 -d test_db -U geber-finn -f /var/lib/postgresql/sql/pg_db_init.sql
+#  mariadb-db:
+#    image: mysql:8.0.28
+#    ports: 
+#      - 3307:3306
+#        #volumes:
+#    environment: 
+#      #- MYSQL_USER=geber-finn 
+      #- MYSQL_PASSWORD=11235813F
+      #- MYSQL_ROOT_PASSWORD=1201
+      #- MYSQL_DATABASE=test_mariadb
+  #mysql-db:
+  #  image: mysql:8
+  #  ports:
+  #    - 3307:3306
+  #  restart: always
+  #  volumes:
+  #    - ./csv/:/etc/mysql/csv
+  #    - ./sql/:/etc/mysql/sql
+  #  environment:
+  #    - MYSQL_ROOT_PASSWORD=11235813NW
+  #    - MYSQL_PASSWORD=11235813F
+  #    - MYSQL_USER=geber-finn
+  #    - MYSQL_DATABASE=test_mydb
+
+  
+  #prometheus-db:
+  #  image: prom/prometheus:v2.34.0
+  #  volumes:
+  #    - ./prometheus/:/etc/prometheus/
+  #    - ./csv/:/etc/prometheus/csv/
+  #    - ./sql/:/etc/prometheus/sql/
+  #  ports:
+  #    - 9090:9090
+  #grafana:
+  #  image: grafana/grafana:latest-ubuntu
+  #  #user: 'geber-finn'
+  #  depends_on:
+  #    - prometheus-db
+  #  ports:
+  #    - 3000:3000
+  #  volumes:
+  #    - ./grafana_data:/var/lib/grafana
+
+
+
+        #pg_user=geber-finn
+        #pg_pass=11235813NW
+        #pg_db=test_db
+        #cont_name=pg_db
+
+#echo $pg_pass $pg_user $(pwd)/sql/
+#docker pull postgres:14.2-alpine3.15
+#docker run --rm --name $cont_name -dp 5433:5432 \
+# -e PGDATA=/var/lib/postgresql/pgdata \
+# -e POSTGRES_PASSWORD=$pg_pass \
+# -e POSTGRES_USER=$pg_user \
+#-e POSTGRES_DB=$pg_db \
+ # -v $(pwd)/sql/:/var/lib/postgresql/sql \
+ # -v $(pwd)/csv/:/var/lib/postgresql/csv \
+ # postgres
+
