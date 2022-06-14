@@ -5,3 +5,4 @@
 /sql/pg_demo.sql.save
 /monitoring-telegram-bot/settings/development.py
 /monitoring-telegram-bot/settings/production.py
+.idea
